@@ -4,36 +4,36 @@
 
 name: Build and deploy Python app to Azure Web App - 10436460
 
-on:
-  push:
+on:                                # ESSA É UMA TRIGGER, UMA TRIGGER FALA QUANDO O CODIGO VAI DISPARAR ( RODAR )
+  push:                            # ESSE CODIGO RODA SEMPRE QUE HOUVER UM 'PUSH' NA MAIN 
     branches:
       - main
   workflow_dispatch:
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+jobs:                              # JOBS DEFINEM OQ VAI FAZER 
+  build:                           # VALIDA E PREPARA 
+    runs-on: ubuntu-latest          # ONDE VAI RODAR ( MAQUINA VIRTUAL )
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read #This is required for actions/checkout # PERMISSÃO PARA LER CODIGO NO REPOSITÓRIO 
 
-    steps:
-      - uses: actions/checkout@v4
+    steps:                          # PASSO A PASSO PARA SER FEITO 
+      - uses: actions/checkout@v4    # PASSO 1: BAIXAR O MEU CÓDIGO DO GITHUB PARA A MÁQUINA VIRTUAL
 
-      - name: Set up Python version
+      - name: Set up Python version    # PASSO 2: INSTALAR O PYTHON NA MÁQUINA VIRTUAL
         uses: actions/setup-python@v5
         with:
-          python-version: '3.14'
+          python-version: '3.14'     # ESCOLHE A VERSÃO 3.14 DO PYTHON
 
       # 🛠️ Local Build Section (Optional)
       # The following section in your workflow is designed to catch build issues early on the client side, before deployment. This can be helpful for debugging and validation. However, if this step significantly increases deployment time and early detection is not critical for your workflow, you may remove this section to streamline the deployment process.
-      - name: Create and Start virtual environment and Install dependencies
+      - name: Create and Start virtual environment and Install dependencies  # PASSO 3: INSTALAR DEPENDÊNCIAS PARA TESTAR SE TUDO FUNCIONA
         run: |
           python -m venv antenv
           source antenv/bin/activate
           pip install -r requirements.txt
                 
       # By default, when you enable GitHub CI/CD integration through the Azure portal, the platform automatically sets the SCM_DO_BUILD_DURING_DEPLOYMENT application setting to true. This triggers the use of Oryx, a build engine that handles application compilation and dependency installation (e.g., pip install) directly on the platform during deployment. Hence, we exclude the antenv virtual environment directory from the deployment artifact to reduce the payload size. 
-      - name: Upload artifact for deployment jobs
+      - name: Upload artifact for deployment jobs   # PASSO 4: SALVAR O CÓDIGO PRONTO NUM "PACOTE" PARA A PRÓXIMA FASE
         uses: actions/upload-artifact@v4
         with:
           name: python-app
@@ -47,30 +47,30 @@ jobs:
       # 2. Refer to sample workflows for alternative deployment strategies: https://github.com/Azure/actions-workflow-samples/tree/master/AppService
       
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
+  deploy:                      # PARTE 2: ENVIAR PARA O AZURE (DEPLOY)
+    runs-on: ubuntu-latest      # VAI RODAR EM OUTRA MÁQUINA VIRTUAL 
+    needs: build                
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      id-token: write #This is required for requesting the JWT     # PERMISSÃO PARA LOGAR NO AZURE COM SEGURANÇA
+      contents: read #This is required for actions/checkout        # PERMISSÃO PARA LER OS ARQUIVOS
 
-    steps:
-      - name: Download artifact from build job
+    steps:                                                      # PASSO A PASSO DO ENVIO
+      - name: Download artifact from build job                  # PASSO 1: PEGAR AQUELE PACOTE 'PYTHON-APP' QUE FOI SALVO ANTES
         uses: actions/download-artifact@v4
         with:
           name: python-app
       
-      - name: Login to Azure
+      - name: Login to Azure                                    # PASSO 2: ENTRAR NA MINHA CONTA DO AZURE USANDO AS CHAVES SECRETAS DO GITHUB
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_990BF4A79D5647F98809C2152EC781C1 }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_00106047FA7244FD9CEDCD98D0C702C6 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_06B5C468D6CD440F8CBAF0896815CE13 }}
 
-      - name: 'Deploy to Azure Web App'
+      - name: 'Deploy to Azure Web App'                          # PASSO 3: MANDAR O CÓDIGO FINAL PARA O SERVIDOR DO AZURE
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
-          app-name: '10436460'
-          slot-name: 'Production'
+          app-name: '10436460'                                    # NOME DO MEU APLICATIVO LÁ NO AZURE
+          slot-name: 'Production'                                  # MANDA DIRETO PARA PRODUÇÃO (PROJETO OFICIAL NO AR)
           
